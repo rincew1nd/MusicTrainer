@@ -1,0 +1,29 @@
+<Project>
+  <!-- https://learn.microsoft.com/en-us/nuget/consume-packages/central-package-management -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Avalonia packages -->
+    <!-- Important: keep version in sync! -->
+    <PackageVersion Include="Accord" Version="3.8.0" />
+    <PackageVersion Include="Avalonia" Version="11.0.10" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.0.10" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.0.10" />
+    <PackageVersion Include="Avalonia.Diagnostics" Version="11.0.10" />
+    <PackageVersion Include="Avalonia.Desktop" Version="11.0.10" />
+    <PackageVersion Include="Avalonia.iOS" Version="11.0.10" />
+    <PackageVersion Include="Avalonia.Browser" Version="11.0.10" />
+    <PackageVersion Include="Avalonia.Android" Version="11.0.10" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <PackageVersion Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageVersion Include="NAudio" Version="2.2.1" />
+    <PackageVersion Include="NP.Ava.Visuals" Version="1.0.30" />
+    <PackageVersion Include="NP.Avalonia.Visuals" Version="1.0.38" />
+    <PackageVersion Include="NWaves" Version="0.9.6" />
+    <PackageVersion Include="OxyPlot.Avalonia" Version="2.1.0" />
+    <PackageVersion Include="OxyPlot.Core" Version="2.2.0" />
+    <PackageVersion Include="ScottPlot.Avalonia" Version="5.0.52" />
+    <PackageVersion Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.1" />
+  </ItemGroup>
+</Project>
