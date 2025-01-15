@@ -11,7 +11,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Accord" />
         <PackageReference Include="Avalonia"/>
         <PackageReference Include="Avalonia.Themes.Fluent"/>
         <PackageReference Include="Avalonia.Fonts.Inter"/>
@@ -21,9 +20,9 @@
             <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
         </PackageReference>
         <PackageReference Include="CommunityToolkit.Mvvm"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
         <PackageReference Include="MathNet.Numerics" />
         <PackageReference Include="NAudio" />
-        <PackageReference Include="NWaves" />
         <PackageReference Include="ScottPlot.Avalonia" />
     </ItemGroup>
 </Project>

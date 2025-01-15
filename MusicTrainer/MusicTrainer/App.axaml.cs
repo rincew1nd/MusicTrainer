@@ -1,9 +1,9 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.DependencyInjection;
 using MusicTrainer.ViewModels;
 using MusicTrainer.Views;
 
@@ -18,16 +18,26 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        // If you use CommunityToolkit, line below is needed to remove Avalonia data validation.
+        // Without this line you will get duplicate validations from both Avalonia and CT
+        BindingPlugins.DataValidators.RemoveAt(0);
+        
+        var vm = CustomServiceProvider.GetRequiredService<MainViewModel>();
+        switch (ApplicationLifetime)
         {
-            // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
-            // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
-            DisableAvaloniaDataAnnotationValidation();
-            desktop.MainWindow = new MainWindow();
-        }
-        else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
-        {
-            singleViewPlatform.MainView = new MainView();
+            case IClassicDesktopStyleApplicationLifetime desktop:
+                DisableAvaloniaDataAnnotationValidation();
+                desktop.MainWindow = new MainWindow()
+                {
+                    DataContext = vm
+                };
+                break;
+            case ISingleViewApplicationLifetime singleViewPlatform:
+                singleViewPlatform.MainView = new MainView
+                {
+                    DataContext = vm
+                };
+                break;
         }
 
         base.OnFrameworkInitializationCompleted();

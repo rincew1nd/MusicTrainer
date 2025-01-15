@@ -1,4 +1,6 @@
-﻿using System;
+﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+using System;
 using System.Threading.Tasks;
 using NAudio.Wave;
 
@@ -6,13 +8,16 @@ namespace MusicTrainer.Logic.AudioManager;
 
 public abstract class BaseAudioManager : IAudioManager
 {
-    private readonly BufferedWaveProvider _bufferedWaveProvider;
-    private readonly int _fftLength;
+    private BufferedWaveProvider _bufferedWaveProvider;
+    private int _fftLength;
     
-    private readonly float[] _slidingWindow;
+    private float[] _slidingWindow;
     private int _slidingWindowPosition;
-
-    protected BaseAudioManager(WaveFormat waveFormat, int fftLength)
+    
+    protected IWaveIn _waveIn;
+    protected WaveFormat WaveFormat { get; private set; }
+    
+    public virtual void SetUp(WaveFormat waveFormat, int fftLength)
     {
         _fftLength = fftLength;
         _slidingWindow = new float[_fftLength];
@@ -24,15 +29,36 @@ public abstract class BaseAudioManager : IAudioManager
         };
     }
 
-    public abstract void StartCapturingAudio(Func<float[], int, Task> processor);
-    public abstract void StopCapturingAudio();
+    public void StartCapturingAudio(Func<float[], int, Task> processor)
+    {
+        if (_waveIn == null)
+        {
+            throw new InvalidOperationException($"Audio Manager was not set up correctly!");
+        }
+        
+        try
+        {
+            _waveIn.StartRecording();
+            _waveIn.DataAvailable += (s, a) => FetchAudioSignal(a, processor);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error starting audio recording: {ex.Message}");
+        }
+    }
+
+    public void StopCapturingAudio()
+    {
+        _waveIn!.StopRecording();
+        _waveIn.Dispose();
+    }
 
     /// <summary>
     /// Fetch audio data and feed it to processor.
     /// </summary>
     /// <param name="event"><see cref="WaveInEventArgs"/></param>
     /// <param name="processor">Audio signal processor</param>
-    protected void FetchAudioSignal(WaveInEventArgs @event, Func<float[], int, Task> processor)
+    private void FetchAudioSignal(WaveInEventArgs @event, Func<float[], int, Task> processor)
     {
         _bufferedWaveProvider.AddSamples(@event.Buffer, 0, @event.BytesRecorded);
 

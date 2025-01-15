@@ -1,3 +1,4 @@
+using System;
 using Avalonia.Controls;
 using MusicTrainer.ViewModels;
 
@@ -8,6 +9,11 @@ public partial class MainView : UserControl
     public MainView()
     {
         InitializeComponent();
-        DataContext = new MainViewModel(this.FindControl<ScottPlot.Avalonia.AvaPlot>("AudioPlot"));
+        this.Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object? sender, EventArgs e)
+    {
+        (DataContext as MainViewModel).SetUpPlot(this.FindControl<ScottPlot.Avalonia.AvaPlot>("AudioPlot"));
     }
 }

@@ -2,6 +2,9 @@
 using Android.Content.PM;
 using Avalonia;
 using Avalonia.Android;
+using Microsoft.Extensions.DependencyInjection;
+using MusicTrainer.Android.Logic.AudioManager;
+using MusicTrainer.Logic.AudioManager;
 
 namespace MusicTrainer.Android;
 
@@ -15,7 +18,15 @@ public class MainActivity : AvaloniaMainActivity<App>
 {
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
     {
-        return base.CustomizeAppBuilder(builder)
-            .WithInterFont();
+        CustomServiceProvider.InitializeServiceProvider(AddPlatformServices);
+        return base.CustomizeAppBuilder(builder).WithInterFont();
+    }
+    
+    /// <summary>
+    /// Register platform specific services.
+    /// </summary>
+    static void AddPlatformServices(IServiceCollection collection)
+    {
+        collection.AddScoped<IAudioManager, AndroidAudioManager>();
     }
 }

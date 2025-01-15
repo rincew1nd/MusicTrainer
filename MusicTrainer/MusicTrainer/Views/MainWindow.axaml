@@ -8,6 +8,5 @@
         x:Class="MusicTrainer.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="MusicTrainer">
-        <Button Content="Test"/>
-        <!--views:MainView /-->
+        <views:MainView />
 </Window>
