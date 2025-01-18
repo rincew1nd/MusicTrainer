@@ -3,13 +3,21 @@ using NAudio.Wave;
 
 namespace MusicTrainer.Desktop.Logic.AudioManager;
 
+/// <summary>
+/// Speaker audio manager.
+/// </summary>
 public class SpeakerAudioManager : BaseAudioManager
 {
-    public override void SetUp(WaveFormat waveFormat, int fftLength)
+    /// <inheritdoc/>
+    public override void SetUp(WaveFormat? waveFormat, int bufferSize)
     {
-        base.SetUp(waveFormat, fftLength);
-        
         _waveIn = new WasapiLoopbackCapture();
-        _waveIn.WaveFormat = waveFormat;
+        
+        if (waveFormat != null)
+        {
+            _waveIn.WaveFormat = waveFormat;
+        }
+        
+        base.SetUp(waveFormat, bufferSize);
     }
 }

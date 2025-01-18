@@ -3,8 +3,6 @@ using Avalonia;
 using Microsoft.Extensions.DependencyInjection;
 using MusicTrainer.Desktop.Logic.AudioManager;
 using MusicTrainer.Logic.AudioManager;
-using MusicTrainer.ViewModels;
-using NAudio.Wave;
 
 namespace MusicTrainer.Desktop;
 

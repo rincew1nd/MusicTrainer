@@ -6,7 +6,7 @@ namespace MusicTrainer.Logic.AudioManager;
 
 public interface IAudioManager
 {
-    void SetUp(WaveFormat waveFormat, int fftLength);
+    void SetUp(WaveFormat waveFormat, int bufferSize);
     void StartCapturingAudio(Func<float[], int, Task> processor);
     void StopCapturingAudio();
 }

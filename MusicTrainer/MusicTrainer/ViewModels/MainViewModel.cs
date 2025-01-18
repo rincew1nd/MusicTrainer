@@ -47,7 +47,7 @@ public partial class MainViewModel : ViewModelBase
     /// <summary>
     /// Length of FFT transformation.
     /// </summary>
-    private readonly int FftLength = (int)Math.Pow(2, 14);
+    private readonly int FftLength = (int)Math.Pow(2, 15);
     
     /// <summary>
     /// Setup view.

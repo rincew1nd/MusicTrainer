@@ -3,16 +3,24 @@ using NAudio.Wave;
 
 namespace MusicTrainer.Desktop.Logic.AudioManager;
 
+/// <summary>
+/// Microphone audio manager.
+/// </summary>
 public sealed class MicAudioManager : BaseAudioManager
 {
-    public override void SetUp(WaveFormat waveFormat, int fftLength)
+    /// <inheritdoc/>
+    public override void SetUp(WaveFormat? waveFormat, int bufferSize)
     {
-        base.SetUp(waveFormat, fftLength);
-
         _waveIn = new WaveInEvent()
         {
             DeviceNumber = 0
         };
-        _waveIn.WaveFormat = waveFormat;
+
+        if (waveFormat != null)
+        {
+            _waveIn.WaveFormat = waveFormat;
+        }
+        
+        base.SetUp(waveFormat, bufferSize);
     }
 }

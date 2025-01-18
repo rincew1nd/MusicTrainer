@@ -8,23 +8,45 @@ namespace MusicTrainer.Logic.AudioManager;
 
 public abstract class BaseAudioManager : IAudioManager, IDisposable
 {
+    /// <summary>
+    /// Audio signal buffer <see cref="BufferedWaveProvider"/>.
+    /// </summary>
     private BufferedWaveProvider _bufferedWaveProvider;
-    private int _fftLength;
+    
+    /// <summary>
+    /// Required buffer size.
+    /// </summary>
+    private int _bufferSize;
+    
+    /// <summary>
+    /// Sliding window for audio signal processing.
+    /// </summary>
     private float[] _sampleWindows;
     
+    /// <summary>
+    /// Platform-specific implementation of <see cref="IWaveIn"/>.
+    /// </summary>
     protected IWaveIn _waveIn;
     
-    public virtual void SetUp(WaveFormat waveFormat, int fftLength)
+    /// <summary>
+    /// Setup audio manager.
+    /// </summary>
+    /// <param name="waveFormat"><see cref="WaveFormat"/> of <see cref="IWaveIn"/></param>
+    /// <param name="bufferSize">Buffer size</param>
+    public virtual void SetUp(WaveFormat? waveFormat, int bufferSize)
     {
-        _fftLength = fftLength;
-        _sampleWindows = new float[fftLength * 2];
-        _bufferedWaveProvider = new BufferedWaveProvider(waveFormat)
+        _bufferSize = bufferSize;
+        _sampleWindows = new float[bufferSize * 2];
+        _bufferedWaveProvider = new BufferedWaveProvider(_waveIn.WaveFormat)
         {
-            BufferLength = _fftLength * 4,
+            BufferLength = _bufferSize * 4,
             DiscardOnBufferOverflow = true
         };
     }
 
+    /// <summary>
+    /// Start capturing audio signal.
+    /// </summary>
     public void StartCapturingAudio(Func<float[], int, Task> processor)
     {
         if (_waveIn == null)
@@ -43,6 +65,9 @@ public abstract class BaseAudioManager : IAudioManager, IDisposable
         }
     }
 
+    /// <summary>
+    /// Stop capturing audio signal.
+    /// </summary>
     public void StopCapturingAudio()
     {
         _waveIn!.StopRecording();
@@ -57,22 +82,22 @@ public abstract class BaseAudioManager : IAudioManager, IDisposable
     {
         _bufferedWaveProvider.AddSamples(@event.Buffer, 0, @event.BytesRecorded);
 
-        var buffer = new byte[_fftLength * _bufferedWaveProvider.WaveFormat.BlockAlign];
+        var buffer = new byte[_bufferSize * _bufferedWaveProvider.WaveFormat.BlockAlign];
         var bytesRead = _bufferedWaveProvider.Read(buffer, 0, buffer.Length);
 
         if (bytesRead <= 0) return;
         
-        // Replace first window with second window (window is a float FFT length size array)
-        Array.Copy(_sampleWindows, _fftLength, _sampleWindows, 0, _fftLength);
+        // Replace first window with second window (window is a float array of buffer size)
+        Array.Copy(_sampleWindows, _bufferSize, _sampleWindows, 0, _bufferSize);
             
         var floatBuffer = ConvertToFloat(buffer, bytesRead);
         
         // Add new audio signal to the second window 
-        Array.Copy(floatBuffer, 0, _sampleWindows, _fftLength, _fftLength);
+        Array.Copy(floatBuffer, 0, _sampleWindows, _bufferSize, _bufferSize);
 
         // Process second half of first window and first half of a second windows (50% signal overlap)
-        var processBuffer = new float[_fftLength];
-        Array.Copy(_sampleWindows, _fftLength / 2, processBuffer, 0, _fftLength);
+        var processBuffer = new float[_bufferSize];
+        Array.Copy(_sampleWindows, _bufferSize / 2, processBuffer, 0, _bufferSize);
         processor(processBuffer, _bufferedWaveProvider.WaveFormat.SampleRate);
         
         // Process second window
@@ -136,6 +161,9 @@ public abstract class BaseAudioManager : IAudioManager, IDisposable
         return floatBuffer;
     }
 
+    /// <summary>
+    /// Dispose <see cref="IAudioManager"/>.
+    /// </summary>
     public void Dispose()
     {
         _waveIn?.Dispose();
