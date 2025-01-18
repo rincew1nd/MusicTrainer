@@ -3,7 +3,7 @@
 namespace MusicTrainer.Logic.AudioAnalyser.NoiseReducer;
 
 /// <summary>
-/// Interface for noise reducers.
+/// Interface for noise reducing algorithms.
 /// </summary>
 public interface INoiseReducer
 {

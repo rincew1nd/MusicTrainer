@@ -1,3 +1,4 @@
+using MusicTrainer.Logic.AudioAnalyser.NoiseReducer;
 using MusicTrainer.Logic.AudioAnalyser.SignalWindowing;
 
 namespace MusicTrainer.Logic.AudioAnalyser;
@@ -28,7 +29,6 @@ public interface IAudioAnalyser
     /// </summary>
     /// <param name="magnitudes">FFT magnitudes</param>
     /// <param name="sampleRate">Audio sample rate</param>
-    /// <param name="threshold">Threshold (depends on algorithm)</param>
     /// <returns>Played notes</returns>
-    string[] FindNotes(double[] magnitudes, int sampleRate, double threshold);
+    string[] FindNotes(double[] magnitudes, int sampleRate);
 }

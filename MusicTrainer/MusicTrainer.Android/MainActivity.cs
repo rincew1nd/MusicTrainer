@@ -23,7 +23,7 @@ public class MainActivity : AvaloniaMainActivity<App>
     }
     
     /// <summary>
-    /// Register platform specific services.
+    /// Register platform-specific services.
     /// </summary>
     static void AddPlatformServices(IServiceCollection collection)
     {

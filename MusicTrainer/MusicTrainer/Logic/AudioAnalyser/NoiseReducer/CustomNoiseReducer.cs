@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Linq;
 using MusicTrainer.Logic.Tools;
 
 namespace MusicTrainer.Logic.AudioAnalyser.NoiseReducer;
 
 /// <summary>
-/// Custom noise reducing algorithms.
+/// Custom written noise reducing algorithms.
 /// </summary>
 public class CustomNoiseReducer : INoiseReducer
 {
@@ -90,9 +89,9 @@ public class CustomNoiseReducer : INoiseReducer
     #region Doesn't work properly
 
     /// <summary>
-    /// Last 10 RMS values
+    /// Last 100 RMS values
     /// </summary>
-    private LimitedQueue<double> RmsValues = new LimitedQueue<double>(100);
+    private readonly LimitedQueue<double> RmsValues = new(100);
     
     /// <summary>
     /// Compute RMS amplitude of magnitudes and find out is it a silence.

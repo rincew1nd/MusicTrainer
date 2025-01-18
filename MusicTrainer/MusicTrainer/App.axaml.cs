@@ -9,7 +9,7 @@ using MusicTrainer.Views;
 
 namespace MusicTrainer;
 
-public partial class App : Application
+public class App : Application
 {
     public override void Initialize()
     {
@@ -18,11 +18,10 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        // If you use CommunityToolkit, line below is needed to remove Avalonia data validation.
-        // Without this line you will get duplicate validations from both Avalonia and CT
-        BindingPlugins.DataValidators.RemoveAt(0);
+        // TODO Move logic to window resolver!
+        // Get main view model from services.
+        var vm = CustomServiceProvider.ServiceProvider.GetRequiredService<MainViewModel>();
         
-        var vm = CustomServiceProvider.GetRequiredService<MainViewModel>();
         switch (ApplicationLifetime)
         {
             case IClassicDesktopStyleApplicationLifetime desktop:

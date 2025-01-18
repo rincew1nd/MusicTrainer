@@ -1,5 +1,8 @@
-﻿namespace MusicTrainer.Logic.AudioAnalyser;
+﻿namespace MusicTrainer.Logic.AudioAnalyser.NoiseReducer;
 
+/// <summary>
+/// Possible types of noise reduction algorithms.
+/// </summary>
 public enum NoiseReductionAlgorithm
 {
     None = 0,

@@ -76,8 +76,8 @@ public class BasicAudioAnalyser : IAudioAnalyser
     /// <param name="sampleRate">Audio sample rate</param>
     /// <param name="threshold">Threshold (depends on algorithm)</param>
     /// <returns>Played notes</returns>
-    public string[] FindNotes(double[] magnitudes, int sampleRate, double threshold)
+    public string[] FindNotes(double[] magnitudes, int sampleRate)
     {
-        return _noteDetector.DetectNotes(magnitudes, sampleRate, threshold);
+        return _noteDetector.DetectNotes(magnitudes, sampleRate);
     }
 }

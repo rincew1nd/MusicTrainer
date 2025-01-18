@@ -28,7 +28,7 @@ sealed class Program
     }
 
     /// <summary>
-    /// Register platform specific services.
+    /// Register platform-specific services.
     /// </summary>
     static void AddPlatformServices(IServiceCollection collection)
     {

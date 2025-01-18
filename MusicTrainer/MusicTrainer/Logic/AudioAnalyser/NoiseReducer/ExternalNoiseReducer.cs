@@ -3,6 +3,9 @@ using MathNet.Numerics.LinearAlgebra;
 
 namespace MusicTrainer.Logic.AudioAnalyser.NoiseReducer;
 
+/// <summary>
+/// Noise reduction algorithms from external libraries.
+/// </summary>
 public class ExternalNoiseReducer : INoiseReducer
 {
     /// <summary>

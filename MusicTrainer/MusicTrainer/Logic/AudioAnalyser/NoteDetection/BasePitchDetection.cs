@@ -3,6 +3,9 @@ using System.Linq;
 
 namespace MusicTrainer.Logic.AudioAnalyser.NoteDetection;
 
+/// <summary>
+/// Base class for pitch detection.
+/// </summary>
 public abstract class BasePitchDetection : INoteDetector
 {
     /// <summary>
@@ -20,8 +23,14 @@ public abstract class BasePitchDetection : INoteDetector
     /// </summary>
     private static readonly string[] NoteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
     
-    public abstract string[] DetectNotes(double[] magnitudes, int sampleRate, double threshold);
+    /// <inheritdoc/>
+    public abstract string[] DetectNotes(double[] magnitudes, int sampleRate);
 
+    /// <summary>
+    /// Map frequency to note.
+    /// </summary>
+    /// <param name="frequency">Frequency</param>
+    /// <returns>None</returns>
     protected string MapFrequencyToNote(double frequency)
     {
         var closestNote = NoteFrequencies
@@ -37,6 +46,11 @@ public abstract class BasePitchDetection : INoteDetector
         return MidiNoteToName(midiNote);
     }
 
+    /// <summary>
+    /// Convert midi note to note name.
+    /// </summary>
+    /// <param name="midiNote"></param>
+    /// <returns>Note name</returns>
     private string MidiNoteToName(int midiNote)
     {
         var octave = (midiNote / 12) - 1;
@@ -44,6 +58,9 @@ public abstract class BasePitchDetection : INoteDetector
         return $"{noteName}{octave}";
     }
 
+    /// <summary>
+    /// Generate frequencies on the notes.
+    /// </summary>
     private static double[] GenerateNoteFrequencies()
     {
         var frequencies = new double[128];

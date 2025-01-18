@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MusicTrainer.Logic.AudioAnalyser;
@@ -15,18 +14,45 @@ using ScottPlot.Avalonia;
 
 namespace MusicTrainer.ViewModels;
 
+/// <summary>
+/// TODO: Temporary view. Capture and process audio data. 
+/// </summary>
 public partial class MainViewModel : ViewModelBase
 {
+    /// <summary>
+    /// List of detected notes.
+    /// </summary>
     [ObservableProperty] private string _playedNotes = string.Empty;
-
-    private readonly IAudioManager _audioManager;
-    private readonly IAudioAnalyser _audioAnalyser;
     
+    /// <summary>
+    /// Plotting UI control.
+    /// </summary>
     private AvaPlot? _audioPlot;
 
+    /// <summary>
+    /// <see cref="IAudioManager"/> to capture audio data.
+    /// </summary>
+    private readonly IAudioManager _audioManager;
+    
+    /// <summary>
+    /// <see cref="IAudioAnalyser"/> to analyze captured data.
+    /// </summary>
+    private readonly IAudioAnalyser _audioAnalyser;
+
+    /// <summary>
+    /// Maximum captured range of hertz.
+    /// </summary>
     private const float Hertz = 22000f;
+    
+    /// <summary>
+    /// Length of FFT transformation.
+    /// </summary>
     private readonly int FftLength = (int)Math.Pow(2, 14);
     
+    /// <summary>
+    /// Setup view.
+    /// </summary>
+    /// <param name="audioManager">Platform-specific <see cref="IAudioManager"/></param>
     public MainViewModel(IAudioManager audioManager)
     {
         _audioManager = audioManager;
@@ -35,32 +61,27 @@ public partial class MainViewModel : ViewModelBase
         _audioAnalyser = new BasicAudioAnalyser(
             new FFTFrequenciesCalculation(),
             new CustomNoiseReducer(),
-            new HPSPitchDetection()
+            new HPSPitchDetection(5)
         );
     }
 
+    /// <summary>
+    /// BUTTON: Start capture
+    /// </summary>
     [RelayCommand]
     private void StartCapturingAudio()
     {
-        var sw = new Stopwatch();
-        sw.Start();
-        var sb = new StringBuilder();
+        var sb = new Stopwatch();
         
         _audioManager.StartCapturingAudio(
             async (audioData, sampleRate) =>
             {
-                sb.Append($"Audio: {sw.ElapsedTicks}");
-                sw.Restart();
-                
                 var _fftData = _audioAnalyser.AnalyzeSignal(
                     audioData, sampleRate,
                     WindowingAlgorithm.Hamming,
                     NoiseReductionAlgorithm.WienerFiltering);
-                
-                sb.Append($"   FFT: {sw.ElapsedTicks}");
-                sw.Restart();
-                
-                var notes = _audioAnalyser.FindNotes(_fftData, sampleRate, 3);
+
+                var notes = _audioAnalyser.FindNotes(_fftData, sampleRate);
                 PlayedNotes = $"{string.Join(", ", notes)}";
 
                 // Update the plot on the UI thread
@@ -70,20 +91,23 @@ public partial class MainViewModel : ViewModelBase
                     _audioPlot.Plot.Add.Signal(_fftData, Hertz / _fftData.Length);
                     _audioPlot.Refresh();
                 });
-                sb.Append($"   UI: {sw.ElapsedTicks}");
-                sw.Restart();
-
-                //PlayedNotes = sb.ToString();;
-                sb.Clear();
             });
     }
 
+    /// <summary>
+    /// BUTTON: Stop capture
+    /// </summary>
     [RelayCommand]
     private void StopCapturingAudio()
     {
         _audioManager.StopCapturingAudio();
     }
 
+    /// <summary>
+    /// Method to supply view with plotting UI control.
+    /// </summary>
+    /// <param name="plot"><see cref="AvaPlot"/></param>
+    /// <exception cref="ArgumentException">Plot object was not found</exception>
     public void SetUpPlot(AvaPlot? plot)
     {
         _audioPlot = plot ?? throw new ArgumentException("Plot object was not found");

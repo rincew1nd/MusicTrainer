@@ -3,8 +3,17 @@ using NAudio.Dsp;
 
 namespace MusicTrainer.Logic.AudioAnalyser.SignalWindowing;
 
+/// <summary>
+/// Static class for applying signal windowing algorithms.
+/// </summary>
 public static class ApplySignalWindowing
 {
+    /// <summary>
+    /// Apply windowing to signal.
+    /// </summary>
+    /// <param name="buffer">Signal</param>
+    /// <param name="windowingAlgorithm"><see cref="WindowingAlgorithm"/></param>
+    /// <exception cref="ArgumentOutOfRangeException">Unsupported windowing algorithm</exception>
     public static void ApplyWindowing(ref float[] buffer, WindowingAlgorithm windowingAlgorithm)
     {
         // Apply windowing

@@ -1,24 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace MusicTrainer.Logic.AudioAnalyser.NoteDetection;
 
-public class PolyphonicNoteDetector : INoteDetector
+/// <summary>
+/// Polyphonic notes detection.
+/// </summary>
+public class PolyphonicNoteDetector : BasePitchDetection
 {
-    private static readonly double[] NoteFrequencies = GenerateNoteFrequencies();
-    private static readonly string[] NoteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-    private static readonly double FrequencyThreshold = 5.0; // Hz tolerance for note detection
+    /// <summary>
+    /// Minimum magnitude value to filter frequencies.
+    /// </summary>
+    private double MagnitudeThreshold { get; set; }
+    
+    /// <summary>
+    /// .ctor
+    /// </summary>
+    /// <param name="magnitudeThreshold">Minimum magnitude value to filter frequencies</param>
+    public PolyphonicNoteDetector(double magnitudeThreshold = 0.3d)
+    {
+        MagnitudeThreshold = magnitudeThreshold;
+    }
 
-    public string[] DetectNotes(
-        double[] magnitudes,
-        int sampleRate,
-        double magnitudeThreshold = 0.25
-    )
+    /// <inheritdoc/>
+    public override string[] DetectNotes(double[] magnitudes, int sampleRate)
     {
         var detectedNotes = new List<string>();
 
-        var peakIndices = FindPeaks(magnitudes, magnitudeThreshold);
+        var peakIndices = FindPeaks(magnitudes);
 
         var freq = new List<double>();
         foreach (var index in peakIndices)
@@ -31,55 +40,31 @@ public class PolyphonicNoteDetector : INoteDetector
                 detectedNotes.Add(note);
             }
         }
+        
+#if DEBUG
         Console.WriteLine(string.Join(", ", freq));
+#endif
 
         return detectedNotes.ToArray();
     }
 
-    private static List<int> FindPeaks(double[] magnitudes, double threshold)
+    /// <summary>
+    /// Find peaks in frequencies.
+    /// </summary>
+    /// <param name="magnitudes">Frequency magnitudes</param>
+    /// <returns>Bins with frequencies bigger than threshold</returns>
+    private List<int> FindPeaks(double[] magnitudes)
     {
         var peaks = new List<int>();
         for (var i = 1; i < magnitudes.Length - 1; i++)
         {
             if (magnitudes[i] > magnitudes[i - 1] &&
                 magnitudes[i] > magnitudes[i + 1] &&
-                magnitudes[i] > threshold)
+                magnitudes[i] > MagnitudeThreshold)
             {
                 peaks.Add(i);
             }
         }
         return peaks;
-    }
-
-    private static string MapFrequencyToNote(double frequency)
-    {
-        var closestNote = NoteFrequencies
-            .Select((noteFreq, index) => new { Index = index, Difference = Math.Abs(noteFreq - frequency) })
-            .MinBy(x => x.Difference);
-
-        if (closestNote == null || !(closestNote.Difference < FrequencyThreshold))
-        {
-            return string.Empty;
-        }
-        
-        var midiNote = closestNote.Index;
-        return MidiNoteToName(midiNote);
-    }
-
-    private static string MidiNoteToName(int midiNote)
-    {
-        var octave = (midiNote / 12) - 1;
-        var noteName = NoteNames[midiNote % 12];
-        return $"{noteName}{octave}";
-    }
-
-    private static double[] GenerateNoteFrequencies()
-    {
-        var frequencies = new double[128];
-        for (int i = 0; i < 128; i++)
-        {
-            frequencies[i] = 440.0 * Math.Pow(2, (i - 69) / 12.0);
-        }
-        return frequencies;
     }
 }

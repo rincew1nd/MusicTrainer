@@ -1,7 +1,7 @@
 ﻿namespace MusicTrainer.Logic.AudioAnalyser.FrequenciesCalculation;
 
 /// <summary>
-/// Interface for frequencies calculation.
+/// Interface for frequencies calculation algorithms.
 /// </summary>
 public interface IFrequenciesCalculation
 {
