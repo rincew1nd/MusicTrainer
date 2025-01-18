@@ -1,24 +1,28 @@
 ﻿using System.Linq;
 using MusicTrainer.Logic.AudioAnalyser.FrequenciesCalculation;
 using MusicTrainer.Logic.AudioAnalyser.NoiseReducer;
+using MusicTrainer.Logic.AudioAnalyser.NoteDetection;
 using MusicTrainer.Logic.AudioAnalyser.SignalWindowing;
 
 namespace MusicTrainer.Logic.AudioAnalyser;
 
-public class CleverAudioAnalyser : IAudioAnalyser
+public class BasicAudioAnalyser : IAudioAnalyser
 {
     private readonly IFrequenciesCalculation _frequenciesCalculation;
     private readonly INoiseReducer _noiseReducer;
+    private readonly INoteDetector _noteDetector;
 
     /// <summary>
     /// .ctor
     /// </summary>
-    public CleverAudioAnalyser(
+    public BasicAudioAnalyser(
         IFrequenciesCalculation frequenciesCalculation,
-        INoiseReducer noiseReducer)
+        INoiseReducer noiseReducer,
+        INoteDetector noteDetector)
     {
         _frequenciesCalculation = frequenciesCalculation;
         _noiseReducer = noiseReducer;
+        _noteDetector = noteDetector;
     }
 
     /// <summary>
@@ -29,13 +33,11 @@ public class CleverAudioAnalyser : IAudioAnalyser
     /// </summary>
     /// <param name="buffer">Raw audio signal</param>
     /// <param name="sampleRate">Audio sample rate</param>
-    /// <param name="normalize">Normalize magnitudes</param>
     /// <param name="windowingAlgorithm">Windowing algorithm</param>
     /// <param name="noiseReductionAlgorithm">Noise reduction algorithm</param>
     /// <returns>Frequencies Magnitudes</returns>
     public double[] AnalyzeSignal(
         float[] buffer, int sampleRate,
-        bool normalize = false,
         WindowingAlgorithm windowingAlgorithm = WindowingAlgorithm.None,
         NoiseReductionAlgorithm noiseReductionAlgorithm = NoiseReductionAlgorithm.None)
     {
@@ -49,14 +51,11 @@ public class CleverAudioAnalyser : IAudioAnalyser
             _noiseReducer.ApplyNoiseReduction(ref magnitudes, noiseReductionAlgorithm);
         }
 
-        if (normalize)
-        {
-            NormalizeMagnitudes(magnitudes);
-        }
+        NormalizeMagnitudes(magnitudes);
         
         return magnitudes;
     }
-    
+        
     /// <summary>
     /// Normalize FFT magnitudes so the values be in range from 0 to 1.
     /// </summary>
@@ -70,8 +69,15 @@ public class CleverAudioAnalyser : IAudioAnalyser
         }
     }
 
-    public string[] FindNotes(double[] magnitudes)
+    /// <summary>
+    /// Detect played notes.
+    /// </summary>
+    /// <param name="magnitudes">Frequencies Magnitudes</param>
+    /// <param name="sampleRate">Audio sample rate</param>
+    /// <param name="threshold">Threshold (depends on algorithm)</param>
+    /// <returns>Played notes</returns>
+    public string[] FindNotes(double[] magnitudes, int sampleRate, double threshold)
     {
-        return ["Not implemented"];
+        return _noteDetector.DetectNotes(magnitudes, sampleRate, threshold);
     }
 }

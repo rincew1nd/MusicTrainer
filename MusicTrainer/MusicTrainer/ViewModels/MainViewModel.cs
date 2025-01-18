@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using MusicTrainer.Logic.AudioAnalyser;
 using MusicTrainer.Logic.AudioAnalyser.FrequenciesCalculation;
 using MusicTrainer.Logic.AudioAnalyser.NoiseReducer;
+using MusicTrainer.Logic.AudioAnalyser.NoteDetection;
 using MusicTrainer.Logic.AudioAnalyser.SignalWindowing;
 using MusicTrainer.Logic.AudioManager;
 using NAudio.Wave;
@@ -24,15 +25,18 @@ public partial class MainViewModel : ViewModelBase
     private AvaPlot? _audioPlot;
 
     private const float Hertz = 22000f;
-    private readonly int FftLength = (int)Math.Pow(2, 13);
+    private readonly int FftLength = (int)Math.Pow(2, 14);
     
     public MainViewModel(IAudioManager audioManager)
     {
         _audioManager = audioManager;
         _audioManager.SetUp(new WaveFormat(44100, 16, 1), FftLength);
         
-        //_audioAnalyser = new DumbAudioAnalyser();
-        _audioAnalyser = new CleverAudioAnalyser(new FFTFrequenciesCalculation(), new CustomNoiseReducer());
+        _audioAnalyser = new BasicAudioAnalyser(
+            new FFTFrequenciesCalculation(),
+            new CustomNoiseReducer(),
+            new HPSPitchDetection()
+        );
     }
 
     [RelayCommand]
@@ -50,15 +54,14 @@ public partial class MainViewModel : ViewModelBase
                 
                 var _fftData = _audioAnalyser.AnalyzeSignal(
                     audioData, sampleRate,
-                    true,
-                    WindowingAlgorithm.Hanning,
+                    WindowingAlgorithm.Hamming,
                     NoiseReductionAlgorithm.WienerFiltering);
                 
                 sb.Append($"   FFT: {sw.ElapsedTicks}");
                 sw.Restart();
                 
-                var notes = _audioAnalyser.FindNotes(_fftData);
-                //PlayedNotes = $"{string.Join(", ", notes)}";
+                var notes = _audioAnalyser.FindNotes(_fftData, sampleRate, 3);
+                PlayedNotes = $"{string.Join(", ", notes)}";
 
                 // Update the plot on the UI thread
                 await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
@@ -70,7 +73,7 @@ public partial class MainViewModel : ViewModelBase
                 sb.Append($"   UI: {sw.ElapsedTicks}");
                 sw.Restart();
 
-                PlayedNotes = sb.ToString();;
+                //PlayedNotes = sb.ToString();;
                 sb.Clear();
             });
     }

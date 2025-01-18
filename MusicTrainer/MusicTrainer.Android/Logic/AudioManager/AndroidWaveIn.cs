@@ -16,7 +16,7 @@ public sealed class AndroidWaveIn : IWaveIn
     private AudioSource audioSource { get; set; } = AudioSource.Mic;
     public int BufferMilliseconds { get; set; } = 100;
     
-    private AudioRecord _audioRecord = null!;
+    private AudioRecord? _audioRecord;
 
     public WaveFormat? WaveFormat { get; set; }
 
@@ -41,7 +41,6 @@ public sealed class AndroidWaveIn : IWaveIn
         }
 
         _captureState = CaptureState.Starting;
-        Console.WriteLine(_audioRecord!.RecordingState);
         _audioRecord.StartRecording();
         ThreadPool.QueueUserWorkItem((_) => RecordThread(), null);
     }
@@ -114,7 +113,7 @@ public sealed class AndroidWaveIn : IWaveIn
         };
 
         //Determine the buffer size
-        int bufferSize = BufferMilliseconds;
+        var bufferSize = BufferMilliseconds;
         if (bufferSize % WaveFormat.BlockAlign != 0)
         {
             bufferSize -= bufferSize % WaveFormat.BlockAlign;
@@ -134,11 +133,11 @@ public sealed class AndroidWaveIn : IWaveIn
     private void CloseRecorder()
     {
         //Make sure that the recorder was opened
-        if (_audioRecord != null && _audioRecord.RecordingState != RecordState.Stopped)
+        if (_audioRecord?.RecordingState != RecordState.Stopped)
         {
-            _audioRecord.Stop();
-            _audioRecord.Release();
-            _audioRecord.Dispose();
+            _audioRecord?.Stop();
+            _audioRecord?.Release();
+            _audioRecord?.Dispose();
             _audioRecord = null;
         }
     }
@@ -179,6 +178,11 @@ public sealed class AndroidWaveIn : IWaveIn
 
     private void RecordingLogic()
     {
+        if (_audioRecord == null)
+        {
+            throw new InvalidOperationException("Audio recorder is not initialized");
+        }
+        
         //Initialize the wave buffer
         int bufferSize = BufferMilliseconds;
         if (bufferSize % WaveFormat!.BlockAlign != 0)
@@ -189,7 +193,7 @@ public sealed class AndroidWaveIn : IWaveIn
         _captureState = CaptureState.Capturing;
 
         //Run the record loop
-        while (_captureState != CaptureState.Stopped && _audioRecord != null)
+        while (_captureState != CaptureState.Stopped)
         {
             if (_captureState != CaptureState.Capturing)
             {
@@ -199,7 +203,7 @@ public sealed class AndroidWaveIn : IWaveIn
 
             if (WaveFormat.Encoding == WaveFormatEncoding.Pcm)
             {
-                byte[] byteBuffer = new byte[bufferSize];
+                var byteBuffer = new byte[bufferSize];
                 var bytesRead = _audioRecord.Read(byteBuffer, 0, bufferSize);
                 if (bytesRead > 0)
                 {
@@ -208,8 +212,8 @@ public sealed class AndroidWaveIn : IWaveIn
             }
             else if (WaveFormat.Encoding == WaveFormatEncoding.IeeeFloat)
             {
-                float[] floatBuffer = new float[bufferSize / 4];
-                byte[] byteBuffer = new byte[bufferSize];
+                var floatBuffer = new float[bufferSize / 4];
+                var byteBuffer = new byte[bufferSize];
                 var floatsRead = _audioRecord.Read(floatBuffer, 0, floatBuffer.Length, 0);
                 Buffer.BlockCopy(floatBuffer, 0, byteBuffer, 0, byteBuffer.Length);
                 if (floatsRead > 0)

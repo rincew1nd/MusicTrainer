@@ -6,22 +6,18 @@ using NAudio.Wave;
 
 namespace MusicTrainer.Logic.AudioManager;
 
-public abstract class BaseAudioManager : IAudioManager
+public abstract class BaseAudioManager : IAudioManager, IDisposable
 {
     private BufferedWaveProvider _bufferedWaveProvider;
     private int _fftLength;
-    
-    private float[] _slidingWindow;
-    private int _slidingWindowPosition;
+    private float[] _sampleWindows;
     
     protected IWaveIn _waveIn;
-    protected WaveFormat WaveFormat { get; private set; }
     
     public virtual void SetUp(WaveFormat waveFormat, int fftLength)
     {
         _fftLength = fftLength;
-        _slidingWindow = new float[_fftLength];
-
+        _sampleWindows = new float[fftLength * 2];
         _bufferedWaveProvider = new BufferedWaveProvider(waveFormat)
         {
             BufferLength = _fftLength * 4,
@@ -50,7 +46,6 @@ public abstract class BaseAudioManager : IAudioManager
     public void StopCapturingAudio()
     {
         _waveIn!.StopRecording();
-        _waveIn.Dispose();
     }
 
     /// <summary>
@@ -62,45 +57,87 @@ public abstract class BaseAudioManager : IAudioManager
     {
         _bufferedWaveProvider.AddSamples(@event.Buffer, 0, @event.BytesRecorded);
 
-        var buffer = new byte[_fftLength * 2];
+        var buffer = new byte[_fftLength * _bufferedWaveProvider.WaveFormat.BlockAlign];
         var bytesRead = _bufferedWaveProvider.Read(buffer, 0, buffer.Length);
-                
-        if (bytesRead > 0)
-        {
-            var floatBuffer = ConvertToFloat(buffer, bytesRead);
 
-            processor(floatBuffer, _bufferedWaveProvider.WaveFormat.SampleRate)
-                .ConfigureAwait(false);
-            //foreach (var sample in floatBuffer)
-            //{
-            //    _slidingWindow[_slidingWindowPosition] = sample;
-            //    _slidingWindowPosition++;
-            //    if (_slidingWindowPosition >= _fftLength)
-            //    {
-            //        _slidingWindowPosition -= _fftLength / 4;
-            //        Array.Copy(_slidingWindow, _fftLength / 4, _slidingWindow, 0, _slidingWindowPosition);
-            //    
-            //        processor(_slidingWindow, _bufferedWaveProvider.WaveFormat.SampleRate)
-            //            .ConfigureAwait(false);
-            //    }
-            //}
-        }
+        if (bytesRead <= 0) return;
+        
+        // Replace first window with second window (window is a float FFT length size array)
+        Array.Copy(_sampleWindows, _fftLength, _sampleWindows, 0, _fftLength);
+            
+        var floatBuffer = ConvertToFloat(buffer, bytesRead);
+        
+        // Add new audio signal to the second window 
+        Array.Copy(floatBuffer, 0, _sampleWindows, _fftLength, _fftLength);
+
+        // Process second half of first window and first half of a second windows (50% signal overlap)
+        var processBuffer = new float[_fftLength];
+        Array.Copy(_sampleWindows, _fftLength / 2, processBuffer, 0, _fftLength);
+        processor(processBuffer, _bufferedWaveProvider.WaveFormat.SampleRate);
+        
+        // Process second window
+        processor(floatBuffer, _bufferedWaveProvider.WaveFormat.SampleRate);
     }
     
     /// <summary>
-    /// Convert audio signal to float values in range of -1 to 1.
+    /// Convert audio signal to float values in range of -1 to 1 based on the specified format.
     /// </summary>
+    /// <param name="buffer">Input audio buffer (raw PCM bytes).</param>
+    /// <param name="bytesRecorded">Number of bytes recorded in the buffer.</param>
+    /// <returns>Array of normalized float values.</returns>
     private float[] ConvertToFloat(byte[] buffer, int bytesRecorded)
     {
-        var samples = bytesRecorded / 2;
-        var floatBuffer = new float[samples];
+        var bitsPerSample = _bufferedWaveProvider.WaveFormat.BitsPerSample;
+        var channels = _bufferedWaveProvider.WaveFormat.Channels;
 
-        for (int i = 0; i < samples; i++)
+        if (bitsPerSample != 16 && bitsPerSample != 24 && bitsPerSample != 32)
         {
-            var sample = BitConverter.ToInt16(buffer, i * 2);
-            floatBuffer[i] = sample / (float)short.MaxValue;
+            throw new ArgumentException("Only 16, 24, or 32 bits per sample are supported.");
+        }
+        
+        var bytesPerSample = bitsPerSample / 8;
+        var totalSamples = bytesRecorded / bytesPerSample;
+        var samplesPerChannel = totalSamples / channels;
+
+        var floatBuffer = new float[samplesPerChannel]; // Mono output
+
+        for (var i = 0; i < samplesPerChannel; i++)
+        {
+            float sampleSum = 0;
+
+            for (var channel = 0; channel < channels; channel++)
+            {
+                var sampleIndex = (i * channels + channel) * bytesPerSample;
+
+                switch (bitsPerSample)
+                {
+                    case 16:
+                        var sample16 = BitConverter.ToInt16(buffer, sampleIndex);
+                        sampleSum += sample16 / (float)short.MaxValue;
+                        break;
+                    case 24:
+                        var sample24 = buffer[sampleIndex + 2] << 16 | 
+                                       buffer[sampleIndex + 1] << 8 | 
+                                       buffer[sampleIndex];
+                        if ((sample24 & 0x800000) != 0) sample24 |= unchecked((int)0xFF000000); // Sign extension
+                        sampleSum += sample24 / 8388608f;
+                        break;
+                    case 32:
+                        var sample32 = BitConverter.ToSingle(buffer, sampleIndex);
+                        sampleSum += sample32;
+                        break;
+                }
+            }
+
+            // Average across channels to create mono output
+            floatBuffer[i] = sampleSum / channels;
         }
 
         return floatBuffer;
+    }
+
+    public void Dispose()
+    {
+        _waveIn?.Dispose();
     }
 }

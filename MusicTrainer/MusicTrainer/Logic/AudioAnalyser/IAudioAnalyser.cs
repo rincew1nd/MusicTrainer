@@ -1,4 +1,3 @@
-using MusicTrainer.Logic.AudioAnalyser.FrequenciesCalculation;
 using MusicTrainer.Logic.AudioAnalyser.SignalWindowing;
 
 namespace MusicTrainer.Logic.AudioAnalyser;
@@ -16,19 +15,20 @@ public interface IAudioAnalyser
     /// </summary>
     /// <param name="buffer">Raw audio signal</param>
     /// <param name="sampleRate">Audio sample rate</param>
-    /// <param name="normalize">Normalize magnitudes</param>
     /// <param name="windowingAlgorithm">Windowing algorithm</param>
     /// <param name="noiseReductionAlgorithm">Noise reduction algorithm</param>
     /// <returns>Frequencies Magnitudes</returns>
     double[] AnalyzeSignal(
-        float[] buffer, int sampleRate, bool normalize = false,
+        float[] buffer, int sampleRate,
         WindowingAlgorithm windowingAlgorithm = WindowingAlgorithm.None,
         NoiseReductionAlgorithm noiseReductionAlgorithm = NoiseReductionAlgorithm.None);
-    
+
     /// <summary>
     /// Analyze FFT magnitudes and try to find played notes.
     /// </summary>
     /// <param name="magnitudes">FFT magnitudes</param>
+    /// <param name="sampleRate">Audio sample rate</param>
+    /// <param name="threshold">Threshold (depends on algorithm)</param>
     /// <returns>Played notes</returns>
-    string[] FindNotes(double[] magnitudes);
+    string[] FindNotes(double[] magnitudes, int sampleRate, double threshold);
 }
