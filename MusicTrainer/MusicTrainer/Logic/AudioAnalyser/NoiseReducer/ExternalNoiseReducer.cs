@@ -1,5 +1,6 @@
 ﻿using System;
 using MathNet.Numerics.LinearAlgebra;
+using NAudio.Dsp;
 
 namespace MusicTrainer.Logic.AudioAnalyser.NoiseReducer;
 
@@ -69,7 +70,12 @@ public class ExternalNoiseReducer : INoiseReducer
                     "Unsupported noise reduction algorithm");
         }
     }
-    
+
+    public void ApplyNoiseReduction(ref Complex[] complexes, NoiseReductionAlgorithm algorithm = NoiseReductionAlgorithm.None)
+    {
+        throw new NotImplementedException();
+    }
+
     private void ApplyWienerFilteringMathNet(ref double[] magnitudes)
     {
         // Convert arrays to Math.NET vectors

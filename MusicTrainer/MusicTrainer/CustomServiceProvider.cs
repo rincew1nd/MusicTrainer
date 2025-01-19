@@ -1,5 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using MusicTrainer.Logic.AudioAnalyser;
+using MusicTrainer.Logic.AudioAnalyser.Experiments;
 using MusicTrainer.ViewModels;
 
 namespace MusicTrainer;
@@ -47,5 +49,6 @@ public static class CustomServiceProvider
     private static void AddCommonServices(this IServiceCollection collection)
     {
         collection.AddTransient<MainViewModel>();
+        collection.AddTransient<FFTAudioAnalyzer>();
     }
 }

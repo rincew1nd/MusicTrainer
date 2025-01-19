@@ -1,4 +1,5 @@
-﻿using MusicTrainer.Logic.AudioManager;
+﻿using System;
+using MusicTrainer.Logic.AudioManager;
 using NAudio.Wave;
 
 namespace MusicTrainer.Android.Logic.AudioManager;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using MusicTrainer.Logic.Tools;
+using NAudio.Dsp;
 
 namespace MusicTrainer.Logic.AudioAnalyser.NoiseReducer;
 
@@ -50,6 +51,26 @@ public class CustomNoiseReducer : INoiseReducer
     }
     
     /// <inheritdoc/>
+    public void UpdateNoiseProfile(Complex[] complexes, bool reset = false)
+    {
+        if (_noiseProfile.Length == 0 || reset)
+        {
+            _noiseProfile = new double[complexes.Length];
+        }
+
+        if (_noiseProfileSamplesLeft <= 0)
+        {
+            return;
+        }
+
+        _noiseProfileSamplesLeft--;
+        for (var i = 0; i < complexes.Length; i++)
+        {
+            _noiseProfile[i] = (_noiseProfile[i] * (1 - NewSignalWeight)) + (complexes[i].Magnitude() * NewSignalWeight);
+        }
+    }
+    
+    /// <inheritdoc/>
     public void ApplyNoiseReduction(ref double[] magnitudes, NoiseReductionAlgorithm algorithm = NoiseReductionAlgorithm.None)
     {
         if (magnitudes.Length == 0 || algorithm == NoiseReductionAlgorithm.None)
@@ -85,36 +106,56 @@ public class CustomNoiseReducer : INoiseReducer
                     "Unsupported noise reduction algorithm");
         }
     }
-
-    #region Doesn't work properly
-
-    /// <summary>
-    /// Last 100 RMS values
-    /// </summary>
-    private readonly LimitedQueue<double> RmsValues = new(100);
     
-    /// <summary>
-    /// Compute RMS amplitude of magnitudes and find out is it a silence.
-    /// </summary>
-    /// <param name="magnitudes">FFT magnitudes</param>
-    private bool IsSilence(double[] magnitudes)
+    /// <inheritdoc/>
+    public void ApplyNoiseReduction(ref Complex[] complexes, NoiseReductionAlgorithm algorithm = NoiseReductionAlgorithm.None)
     {
-        var rms = Math.Sqrt(magnitudes.Sum(t => t * t) / magnitudes.Length);
-        RmsValues.Enqueue(rms);
-
-        double rmsSum = 0;
-        double rmsSqSum = 0;
-        foreach (var rmsValue in RmsValues)
+        if (complexes.Length == 0 || algorithm == NoiseReductionAlgorithm.None)
         {
-            rmsSum += rmsValue;
-            rmsSqSum += rmsValue * rmsValue;
+            return;
         }
         
-        var meanRMS = rmsSum / RmsValues.Count;
-        var stdDevRMS = Math.Sqrt((rmsSqSum / RmsValues.Count) - (meanRMS * meanRMS));
+        switch (algorithm)
+        {
+            case NoiseReductionAlgorithm.AdaptiveSpectralSubtraction:
+            {
+                for (var i = 0; i < complexes.Length; i++)
+                {
+                    var magnitude = complexes[i].Magnitude();
 
-        return rms <= meanRMS + (stdDevRMS * 1.5);
+                    var gain = magnitude / Math.Max(0, magnitude - _noiseProfile[i]);
+                    
+                    complexes[i] = new Complex
+                    {
+                        X = complexes[i].X * (float)gain,
+                        Y = complexes[i].Y * (float)gain
+                    };
+                }
+                break;
+            }
+            case NoiseReductionAlgorithm.WienerFiltering:
+            {
+                for (var i = 0; i < complexes.Length; i++)
+                {
+                    var magnitude = complexes[i].Magnitude();
+                    
+                    var noisePower = _noiseProfile[i] * _noiseProfile[i];
+                    var signalPower = magnitude * magnitude;
+                    var gain = signalPower / (signalPower + noisePower);
+
+                    complexes[i] = new Complex
+                    {
+                        X = complexes[i].X * (float)gain,
+                        Y = complexes[i].Y * (float)gain
+                    };
+                }
+                break;
+            }
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(algorithm),
+                    algorithm,
+                    "Unsupported noise reduction algorithm");
+        }
     }
-
-    #endregion
 }

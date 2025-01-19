@@ -1,4 +1,5 @@
 ﻿using System;
+using NAudio.Dsp;
 
 namespace MusicTrainer.Logic.AudioAnalyser.NoiseReducer;
 
@@ -22,4 +23,13 @@ public interface INoiseReducer
     /// <param name="algorithm">Noise reduction algorithm</param>
     /// <exception cref="ArgumentOutOfRangeException">Unsupported noise reduction algorithm</exception>
     void ApplyNoiseReduction(ref double[] magnitudes, NoiseReductionAlgorithm algorithm = NoiseReductionAlgorithm.None);
+    
+    /// <summary>
+    /// Apply noise reduction algorithm to magnitudes.
+    /// <see cref="complexes"/> will be overwritten after execution!
+    /// </summary>
+    /// <param name="complexes"><see cref="Complex"/></param>
+    /// <param name="algorithm">Noise reduction algorithm</param>
+    /// <exception cref="ArgumentOutOfRangeException">Unsupported noise reduction algorithm</exception>
+    void ApplyNoiseReduction(ref Complex[] complexes, NoiseReductionAlgorithm algorithm = NoiseReductionAlgorithm.None);
 }

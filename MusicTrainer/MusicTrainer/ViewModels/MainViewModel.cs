@@ -72,26 +72,27 @@ public partial class MainViewModel : ViewModelBase
     private void StartCapturingAudio()
     {
         var sb = new Stopwatch();
-        
-        _audioManager.StartCapturingAudio(
-            async (audioData, sampleRate) =>
+
+        _audioManager.OnDataAvailable += (audioData, sampleRate) =>
+        {
+            var _fftData = _audioAnalyser.AnalyzeSignal(
+                audioData, sampleRate,
+                WindowingAlgorithm.Hamming,
+                NoiseReductionAlgorithm.WienerFiltering);
+
+            var notes = _audioAnalyser.FindNotes(_fftData, sampleRate);
+            PlayedNotes = $"{string.Join(", ", notes)}";
+
+            // Update the plot on the UI thread
+            Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
-                var _fftData = _audioAnalyser.AnalyzeSignal(
-                    audioData, sampleRate,
-                    WindowingAlgorithm.Hamming,
-                    NoiseReductionAlgorithm.WienerFiltering);
+                _audioPlot!.Plot.Clear();
+                _audioPlot.Plot.Add.Signal(_fftData, Hertz / _fftData.Length);
+                _audioPlot.Refresh();
+            }).Wait();
+        };
 
-                var notes = _audioAnalyser.FindNotes(_fftData, sampleRate);
-                PlayedNotes = $"{string.Join(", ", notes)}";
-
-                // Update the plot on the UI thread
-                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    _audioPlot!.Plot.Clear();
-                    _audioPlot.Plot.Add.Signal(_fftData, Hertz / _fftData.Length);
-                    _audioPlot.Refresh();
-                });
-            });
+        _audioManager.StartCapturingAudio();
     }
 
     /// <summary>

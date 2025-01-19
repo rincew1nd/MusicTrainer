@@ -66,7 +66,9 @@ public class HPSPitchDetection : BasePitchDetection
         
         return [
             $"OMax: {MapFrequencyToNote(frequency)} [{maxBin.ToString()}]",
+            $"Freq: {frequency:N2}",
             $"CMax: {MapFrequencyToNote(correctFrequency)} [{correctMaxBin.ToString()}]",
+            $"Freq: {correctFrequency:N2}",
             $"Diff: {Math.Abs(correctMaxBin * 2 - maxBin):00}",
             $"Magn: {magnitudes[correctMaxBin] / magnitudes[maxBin]:N3}"
         ];
